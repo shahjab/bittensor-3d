@@ -1,0 +1,55 @@
+{
+  "name": "solar_system",
+  "version": "0.1.0",
+  "homepage": "https://osamakashif.github.io/Solar_System",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.12.4",
+    "@mui/icons-material": "^5.14.0",
+    "@mui/material": "^5.14.0",
+    "@polkadot/api": "^9.5.2",
+    "@polkadot/rpc-provider": "^9.5.2",
+    "@polkadot/types": "^9.5.2",
+    "@react-spring/web": "^9.7.3",
+    "@react-three/drei": "^8.18.5",
+    "@react-three/fiber": "^7.0.26",
+    "@reduxjs/toolkit": "^1.8.3",
+    "axios": "^1.1.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.0.2",
+    "react-scripts": "5.0.0",
+    "react-spinners": "^0.13.8",
+    "simplex-noise": "^2.4.0",
+    "three": "^0.138.3"
+  },
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "gh-pages": "^3.2.3"
+  }
+}
