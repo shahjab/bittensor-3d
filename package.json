@@ -1,7 +1,7 @@
 {
-  "name": "solar_system",
+  "name": "Bittensor 3D",
   "version": "0.1.0",
-  "homepage": "https://osamakashif.github.io/Solar_System",
+  "homepage": "",
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.12.4",

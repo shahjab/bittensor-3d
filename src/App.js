@@ -46,7 +46,7 @@ function App() {
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <div style={{ position: "absolute", zIndex: 50, top: 20, left: 50, mixBlendMode: "darken" }}>
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5PDPdXCbk-36GLCvfvg3kXXST7HA7uw47m3AJPQNb7n-PpzAdbj2oDTSATj2QkuTRv-g" alt="" width={80} height={80} />
+        <img src="/images/logo.png" alt="" width={80} height={80} />
       </div>
       <div style={{ position: "absolute", display: "flex", flexDirection: "column", right: "20px", top: "20px", width: "500px", padding: "1rem", backgroundColor: "#ffffffa0", borderRadius: "16px", zIndex: 50 }}>
         <div style={{ display: "flex", alignItems: "center" }}>

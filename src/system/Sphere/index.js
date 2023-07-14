@@ -69,7 +69,6 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
   const minersRef = useRef(null);
 
   const curveRef = useRef(null);
-  // let raycaster = new THREE.Raycaster();
 
   useEffect(() => {
     if (!rendererRef.current) return;
@@ -138,17 +137,16 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
 
     const loader = new THREE.TextureLoader();
     const textureSphereBg = loader.load(
-      'https://i.ibb.co/4gHcRZD/bg3-je3ddz.jpg'
+      '/images/spacebg.jpg'
     );
     const texturenucleus = loader.load(
-      'https://i.ibb.co/hcN2qXk/star-nc8wkw.jpg'
+      '/images/star-nc8wkw.jpg'
     );
     const textureStar = loader.load(
-      'https://i.ibb.co/ZKsdYSz/p1-g3zb2a.png'
+      '/images/white.png'
     );
-    const texture1 = loader.load('https://i.ibb.co/F8by6wW/p2-b3gnym.png');
-    const texture2 = loader.load('https://i.ibb.co/yYS2yx5/p3-ttfn70.png');
-    const texture4 = loader.load('https://i.ibb.co/yWfKkHh/p4-avirap.png');
+    const texture1 = loader.load('/images/red.png');
+    const texture2 = loader.load('/images/blue.png');
 
     /*  Nucleus  */
     texturenucleus.anisotropy = 16;
@@ -476,7 +474,7 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
   return (<div id="canvas_container" ref={containerRef} style={{
     width: "100vw", height: "100vh", margin: 0,
     overflow: "hidden",
-    backgroundImage: 'url("https://img.freepik.com/free-vector/white-abstract-background-design_23-2148825582.jpg?w=2000")',
+    backgroundImage: 'url("/images/background.jpg")',
     backgroundSize: "cover",
     backdropFilter: 'brightness("50%")'
   }}>
