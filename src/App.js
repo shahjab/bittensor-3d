@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 
 import { Button, FormControl, Select, MenuItem, Divider, FormControlLabel, RadioGroup, FormLabel, Radio, ButtonGroup } from '@material-ui/core';
@@ -16,6 +16,8 @@ import { ClipLoader } from 'react-spinners'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAngleLeft, faAngleRight, faCircleInfo, faClose } from "@fortawesome/free-solid-svg-icons";
 // import { ArrowDropDown, ArrowDropUp } from '@mui/icons-material';
+
+const old_metas = {};
 
 const getInfo = (hotkey) => {
   if (hotkey == "") return {};
@@ -73,6 +75,24 @@ function App() {
       }
     }
   }
+
+  const setInitialNeurons = (data) => {
+    old_metas[data[0].netuid] = data;
+  } 
+
+  const getUidFromHotkey = useCallback((hotkey) => {
+    for(let i=neurons[netuid].length-1; i >=0 ; i--) {
+      if(neurons[netuid][i].hotkey == hotkey) {
+        return neurons[netuid][i].uid;
+      }
+    }
+    for(let i=0; i < old_metas[netuid]?.length; i++) {
+      if(old_metas[netuid][i].hotkey == hotkey) {
+        return old_metas[netuid][i].uid;
+      }
+    }
+    return "...";
+  }, [neurons[netuid], netuid])
 
   const onAddTransactions = (txs) => {
     const tmp = [...transactions, ...txs];
@@ -132,7 +152,6 @@ function App() {
           <div className="flex items-center justify-between text-[10px]">
             <p> Oldest </p>
             <p> New </p>
-
           </div>
         </div>
       }
@@ -165,20 +184,19 @@ function App() {
             <button key={validator.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" style={{ backgroundColor: neuronInfo?.hotkey == validator.hotkey ? "lightblue" : "white" }}
               onClick={() => { findValidator(validator) }}
             >
-              <div className="w-[80px] max-h-[80px] rounded bg-black flex justify-center items-center p-[0.25rem]">
+              <div className="w-[80px] max-h-[80px] rounded flex justify-center items-center p-[0.25rem]" style={{backgroundColor: validator.icon.length ? "black" : "transparent"}}>
                 {validator.icon.length > 0 &&
                   <img alt={validator.name} src={validator.icon} />
                 }
               </div>
               <div className="flex flex-col px-[0.5rem] mr-[1rem]">
-                <p className="font-bold text-[14px] text-left"> {validator.name} </p>
+                <p className="font-bold text-[14px] text-left"> {validator.name} <span className="px-[0.25rem] rounded-full bg-[green] text-white font-bold text-[12px]"> { getUidFromHotkey(validator.hotkey) } </span></p>
                 <p className="text-[11px] text-left"> hotkey: {validator.hotkey.substring(0, 5)}...{validator.hotkey.substring(validator.hotkey.length - 3)} </p>
               </div>
             </button>
           )}
         </div>
       </div>
-
 
       <div className="absolute w-[360px] min-h-[calc(100vh-140px)] bg-white top-[120px] rounded-[1rem] rounded-l-[0px] flex flex-col p-[1rem] shadow transition-all duration-700" style={{ left: isOpenDrawer == 2 ? 0 : "-360px" }}>
         <h4 className="text-[1.25rem] font-bold"> Latest Transactions </h4>
@@ -188,6 +206,12 @@ function App() {
           >
             <FontAwesomeIcon icon={faClose} width={24} height={24} />
           </button>
+          { transactions.length == 0 && 
+            <div className="flex items-center">
+              <ClipLoader />
+              <p> Loading ... </p>
+            </div>
+          }
           {transactions.map((tx) =>
             <button key={tx.hash} className="flex mb-[0.5rem] hover:bg-[lightgray]"
             >
@@ -253,15 +277,14 @@ function App() {
                 {neuronInfo?.name.length > 0 &&
                   <p style={{ fontSize: 24, fontWeight: 600, marginBottom: "5px", }}> {neuronInfo.name} </p>
                 }
-                <p style={{ marginBottom: "5px", marginTop: "0px" }}> hotkey: <span style={{ fontSize: 12 }}> {selectedNeuron.hotkey} </span></p>
-                {/* <p style={{ marginBottom: "5px", marginTop: "5px" }}> coldkey: <span style={{ fontSize: 12 }}> {selectedNeuron.coldkey} </span></p> */}
+                <p className="mb-[10px] mt-[0px]"> hotkey: <span className="text-[12px]"> {selectedNeuron.hotkey} </span></p>
+                {/* <p style={{ marginBottom: "5px", marginTop: "5px" }}> coldkey: <span className="text-[12px]"> {selectedNeuron.coldkey} </span></p> */}
                 <Button variant="outlined" size="small" onClick={() => { openStakeDetails(!isOpenStake) }}>
                   {isOpenStake ? "Close" : "Open"} Stake
                 </Button>
-                <Divider style={{ marginTop: "5px", marginBottom: "5px", }} />
                 {isOpenStake &&
                   <>
-                    <h4> Stake </h4>
+                <Divider style={{ marginBottom: "5px", marginTop: "5px" }}/>
                     <div style={{ maxHeight: "300px", overflowY: "auto" }}>
                       <TableContainer component={Paper}>
                         <Table className={classes.table} aria-label="simple table">
@@ -277,7 +300,7 @@ function App() {
                                 <TableCell component="th" scope="row" style={{ fontSize: "11px" }}>
                                   {row[0]}
                                 </TableCell>
-                                <TableCell align="center" style={{ fontSize: "11px" }}>{row[1]}</TableCell>
+                                <TableCell align="center" style={{ fontSize: "11px" }}>{(row[1]/10**10).toFixed(3)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -303,9 +326,8 @@ function App() {
         } else {
           setLoading(false)
         }
-        console.log("All", tmp);
         setNeurons({ ...tmp });
-      }} setTransactions={onAddTransactions} neurons={neurons} validatorAddr={validatorAddr} searchString={searchString} searchType={searchType} />
+      }} setTransactions={onAddTransactions} neurons={neurons} validatorAddr={validatorAddr} searchString={searchString} searchType={searchType} setInitialNeurons={setInitialNeurons} />
     </div>
   );
 }

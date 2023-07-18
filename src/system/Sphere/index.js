@@ -58,7 +58,7 @@ function getRandom(min, max) {
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 
-export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, neurons, validatorAddr, searchString, searchType }) {
+export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, neurons, validatorAddr, searchString, searchType, setInitialNeurons }) {
   // const [validators, setValidators] = useState([]);
   // const [miners, setMiners] = useState([]);
   // const [neuronsList[current_netuid].length, setNeuronsList[current_netuid].length] = useState(0);
@@ -88,8 +88,6 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
     validators = [];
     miners = [];
 
-    console.log("applying subtensor", netuid, neurons[netuid].length);
-
     for (let i = curves_meshes.length - 1; i >= 0; i--) {
       scene.remove(curves_meshes[i]);
       curves_meshes.splice(i, 1)
@@ -112,7 +110,6 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
     restoreAll(netuid);
 
     if(neuronsList[current_netuid].length == 0) return ;
-    console.log("onSelect", neuronsList[current_netuid].map((item) => item.neuron));
     onSelect({neuron: neuronsList[current_netuid][neuronsList[current_netuid].length-1], all: neuronsList[current_netuid].map((item) => item.neuron), index: neuronsList[current_netuid].length -1, netuid: current_netuid});
 
     if(!selected_mesh) return ;
@@ -124,24 +121,20 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
   }, [netuid])
 
   useEffect(() => {
-    console.log(searchString, searchType,  neuronsList[current_netuid]);
     let ans;
     if(searchType == 1) { //UID search
       ans = neuronsList[current_netuid].filter((item) => ("" + item.neuron.uid) == searchString);
-      console.log("found uid ", ans)
     } else {
       ans = neuronsList[current_netuid].filter((item) => String(item.neuron.hotkey).toLocaleLowerCase().includes(searchString.toLocaleLowerCase()));
       if(searchString.trim().length == 0) {
         ans.slice(0, ans.length);
         ans = [];
       }
-      console.log("found hotkey", ans)
     }
     for (let i = 0, l = ans.length; i < l; i++) {
       if(filter_meshes.length > i) {
         const p = startPositions[ans[i].neuron.uid];
         filter_meshes[i].position.set(p.x, p.y, p.z);
-        console.log("position updated")
       } else {
         const p = startPositions[ans[i].neuron.uid];
         let validatorSphere = new THREE.SphereBufferGeometry(4, 8, 8);
@@ -155,13 +148,11 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         vMesh.position.set(p.x, p.y, p.z);
         scene.add(vMesh);
         filter_meshes.push(vMesh);
-        console.log("created", p);
       }
     }
     for(let i = filter_meshes.length -1; i >= ans.length; i-- ) {
       scene.remove(filter_meshes[i]);
       filter_meshes.slice(i, 1);
-      console.log("removed", i);
     }
     filter_meshes.length = ans.length;
   }, [ searchString, searchType, neuronsList[current_netuid]])
@@ -175,7 +166,6 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         selected_mesh.position.set(pos.x, pos.y, pos.z);
       }
     }
-    console.log("validator addressing", validatorAddr)
   }, [validatorAddr])
 
   const init = () => {
@@ -323,8 +313,6 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
 
     validators = vList;
     miners = mList;
-
-    console.log({neuronsList, nid, vList, mList});
 
     drawValidators();
     drawMiners();
@@ -511,7 +499,6 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
     // let ptype = 1;
     let pos;
     for(let i = 0 ; i < neuronsList[current_netuid].length; i++) {
-      // console.log(neuronsList[current_netuid].neuron);
       const position2D = get2DPosition(startPositions[neuronsList[current_netuid][i].neuron.uid], camera);
       const dist = Math.sqrt((position2D.x - event.clientX) * (position2D.x - event.clientX) + (position2D.y - event.clientY) * (position2D.y - event.clientY));
       if (dist < min) {
@@ -530,7 +517,6 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
   /*     Resize     */
   const onWindowResize = () => {
     clearTimeout(timeoutDebounceRef.current);
-    console.log("resize");
     timeoutDebounceRef.current = setTimeout(() => {
       cameraRef.current.aspect =
         containerRef.current.clientWidth / containerRef.current.clientHeight;
@@ -575,13 +561,11 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         }
       }
     }
-    console.log("addded", count);
     if(v[0].netuid == current_netuid) {
       const pos = startPositions[v[0].uid];
       selected_mesh.position.set(pos.x, pos.y, pos.z);
     }
-    console.log("onSelect", neuronsList[current_netuid].map((n) => n.neuron));
-    onSelect({neuron: neuronsList[current_netuid][neuronsList[current_netuid].length - 1].neuron, all: neuronsList[current_netuid].map((n) => n.neuron), index: neuronsList[current_netuid].length - 1, netuid: current_netuid});
+    onSelect({neuron: neuronsList[current_netuid][neuronsList[current_netuid].length - 1]?.neuron, all: neuronsList[current_netuid].map((n) => n.neuron), index: neuronsList[current_netuid].length - 1, netuid: current_netuid});
   }
 
   const load = async (net) => {
@@ -596,7 +580,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       return;
     }
     // getTransactions(api);
-    watch(api, onUpdate, setTransactions);
+    watch(api, onUpdate, setTransactions, setInitialNeurons);
   }
 
   return (<div id="canvas_container" ref={containerRef} style={{
