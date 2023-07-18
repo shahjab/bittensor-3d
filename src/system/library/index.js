@@ -275,39 +275,211 @@ async function getLatestBlock(api) {
   return blockNumber;
 }
 
-export async function watch(api, netuid, onUpdate) {
-  let neurons = [];
+export async function getTransactions(api, hash) {
+  api.rpc.chain.subscribeNewHeads(async (header) => {
+    console.log(`New block #${header.number}: ${header.hash}`);
 
-  let old_meta;
-  old_meta = await refreshMeta(api, netuid);
+    const signedBlock = await api.rpc.chain.getBlock(header.hash);
+    for (const extrinsic of signedBlock.block.extrinsics) {
+      const { method: { args, method, section }, signer, isSigned } = extrinsic;
+      // console.log(`Extrinsic: ${section}.${method}(${args.map(a => a.toString()).join(', ')})`);
+      console.log(`Signed by ${signer.toString()}: ${isSigned}`);
 
-  let startBlock = 0;
-  let sorted_meta = old_meta.sort((a, b) => b.last_update - a.last_update);
-  neurons = sorted_meta.slice(0, 50);
-  startBlock = neurons[0].last_update;
-  neurons = neurons.reverse();
-  onUpdate(netuid, neurons)
+      // Get extrinsic hash (transaction hash)
+      const hash = api.createType('Extrinsic', extrinsic).hash.toHex();
+      console.log(`Extrinsic hash: ${hash}`);
+    }
+  });
+}
+
+export async function watch(api, onUpdate, setTransactions) {
+  let neurons = {"1": [], "3": [], "11": []};
+  let startBlock = {"1": 0, "3": 0, "11": 0};
+
+  const netuids = [1,3,11];
+  for(let i = 0 ;i < netuids.length; i++) {
+    let old_meta;
+    old_meta = await refreshMeta(api, netuids[i]);
+
+    let sorted_meta = old_meta.sort((a, b) => b.last_update - a.last_update);
+    console.log({old_meta, sorted_meta})
+    neurons[netuids[i]] = sorted_meta.slice(0, 50);
+    startBlock[netuids[i]] = neurons[netuids[i]][0].last_update;
+    neurons[netuids[i]] = neurons[netuids[i]].reverse();
+    console.log("initial neurons", neurons[netuids[i]])
+    onUpdate(neurons[netuids[i]])
+  }
+  let transactions = [];
+
+  api.rpc.chain.subscribeNewHeads(async (header) => {
+    console.log(`New block #${header.number}: ${header.hash}`);
+
+    const signedBlock = await api.rpc.chain.getBlock(header.hash);
+    for (const extrinsic of signedBlock.block.extrinsics) {
+      const { method: { args, method, section }, signer, isSigned } = extrinsic;
+      // console.log(`Extrinsic: ${section}.${method}(${args.map(a => a.toString()).join(', ')})`);
+      // console.log(`Signed by ${signer.toString()}: ${isSigned}`);
+
+      // Get extrinsic hash (transaction hash)
+      const hash = api.createType('Extrinsic', extrinsic).hash.toHex();
+      // console.log(`Extrinsic hash: ${hash}`);
+      transactions.push({
+        hash, signer: signer.toString(), block: `${header.number}`,
+      })
+    }
+    
+    // console.log(`New block #${header.number}: `, transactions);
+    const txs = transactions.reverse().slice(0,50);
+    setTransactions(txs);
+    transactions = txs.reverse();
+
+    
+  });
 
   while (true) {
-    await sleep(10000)
-    const new_meta = await refreshMeta(api, netuid);
-    let tmp = JSON.parse(JSON.stringify(neurons));
+    console.log("reloading-----------");
+    await sleep(1000)
+    for(let i = 0 ;i < netuids.length; i++) {
+      const new_meta = await refreshMeta(api, netuids[i]);
+      let tmp = JSON.parse(JSON.stringify(neurons[netuids[i]]));
 
-    let max = startBlock;
-    let f = false;
-    new_meta.map((meta) => {
-      if (meta.last_update > startBlock) {
-        tmp.push(meta);
-        f = true;
+      let max = startBlock[netuids[i]];
+      let f = false;
+      new_meta.map((meta) => {
+        if (meta.last_update > startBlock[netuids[i]]) {
+          tmp.push(meta);
+          f = true;
+        }
+        if (meta.last_update > max)
+          max = meta.last_update
+
+        startBlock[netuids[i]] = max;
+      })
+      if (f) {
+        neurons[netuids[i]] = tmp;
+        onUpdate(tmp)
       }
-      if (meta.last_update > max)
-        max = meta.last_update
-
-      startBlock = max;
-    })
-    if (f) {
-      neurons = tmp;
-      onUpdate(netuid, tmp)
     }
   }
+
+  // while (true) {
+  //   await sleep(10000)
+  //   const new_meta = await refreshMeta(api, netuid);
+  //   let tmp = JSON.parse(JSON.stringify(neurons));
+
+  //   let max = startBlock;
+  //   let f = false;
+  //   new_meta.map((meta) => {
+  //     if (meta.last_update > startBlock) {
+  //       tmp.push(meta);
+  //       f = true;
+  //     }
+  //     if (meta.last_update > max)
+  //       max = meta.last_update
+
+  //     startBlock = max;
+  //   })
+  //   if (f) {
+  //     neurons = tmp;
+  //     onUpdate(netuid, tmp)
+  //   }
+  // }
 }
+
+export const validators = [{
+  name: "Opentensor Foundation",
+  hotkey: "5F4tQyWrhfGVcNhoqeiNsR6KjD4wMZ2kfhLj4oHYuyHbZAc3",
+  icon: "/images/icons/open-tensor.png"
+}, {
+  name: "τaosτaτs",
+  hotkey: "5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8",
+  icon: "/images/icons/tao-stats_logo.png"
+}, {
+  name: "TAO-Validator.com",
+  hotkey: "5EhvL1FVkQPpMjZX4MAADcW42i3xPSF1KiCpuaxTYVr28sux",
+  icon: "/images/icons/tao-validator-com.png"
+}, {
+  name: "Neural Inτerneτ",
+  hotkey: "5HNQURvmjjYhTSksi8Wfsw676b4owGwfLR2BFAQzG7H3HhYf",
+  icon: "/images/icons/neural-internet.png"
+}, {
+  name: "Exchange Listings",
+  hotkey: "5FqPJMZDp39KRd9jDhXuFpZWkYD7wG5AXmjoWqK8rDy7ok5B",
+  icon: "/images/icons/exchange-listings.jpg"
+}, {
+  name: "FirstTensor",
+  hotkey: "5DvTpiniW9s3APmHRYn8FroUWyfnLtrsid5Mtn5EwMXHN2ed",
+  icon: "/images/icons/rsz_2st_tensor_logo_white.png"
+}, {
+  name: "TaoBridge.xyz",
+  hotkey: "5FLKnbMjHY8LarHZvk2q2RY9drWFbpxjAcR5x8tjr3GqtU6F",
+  icon: "/images/icons/tao-bridge-1.png"
+}, {
+  name: "MycoNet",
+  hotkey: "5Dkv87qjGGF42SNhDAep6WZp65E29c2vUPUfDBGDNevENCMs",
+  icon: "/images/icons/myconet-tree-210x210-1.jpg"
+}, {
+  name: "Taostation",
+  hotkey: "5HeKSHGdsRCwVgyrHchijnZJnq4wiv6GqoDLNah8R5WMfnLB",
+  icon: "/images/icons/taostation_logo.png"
+}, {
+  name: "RoundTable21",
+  hotkey: "5FFApaS75bv5pJHfAp2FVLBj9ZaXuFDjEypsaBNc1wCfe52v",
+  icon: "/images/icons/roundtable21-bittensor-validator.jpg"
+}, {
+  name: "TaoPolishNode",
+  hotkey: "5H6BgKkAr2Anmm9Xw5BVDE4VaQmFEVMkJUHeT7Gki4J7yF4x",
+  icon: "/images/icons/tao-node.png"
+}, {
+  name: "DAGtensor",
+  hotkey: "5HK5tp6t2S59DywmHRWPBVJeJ86T61KjurYqeooqj8sREpeN",
+  icon: "/images/icons/3386.png"
+}, {
+  name: "Vune’s Validator",
+  hotkey: "5ECvRLMj9jkbdM4sLuH5WvjUe87TcAdjRfUj5onN4iKqYYGm",
+  icon: ""
+}, {
+  name: "Tensor.Exchange",
+  hotkey: "5GcBK8PDrVifV1xAf4Qkkk6KsbsmhDdX9atvk8vyKU8xdU63",
+  icon: "/images/icons/tensor-exchange-logo-1.png"
+}, {
+  name: "Church of Rao",
+  hotkey: "5EsbfxPcQaUrCDurUJ8Q5qDKNENNGziu3qHWUbXrcuY2pbNz",
+  icon: "/images/icons/churchofrao-2.png"
+}, {
+  name: "Lucrosus Pool",
+  hotkey: "5FcXnzNo3mrqReTEY4ftkg5iXRBi61iyvM4W1bywZLRqfxAY",
+  icon: "/images/icons/pool_logo_side_transparent.png"
+}, {
+  name: "bitnost.re",
+  hotkey: "5Gpt8XWFTXmKrRF1qaxcBQLvnPLpKi6Pt2XC4vVQR7gqNKtU",
+  icon: "/images/icons/bitnost.jpg"
+}, {
+  name: "North Tensor",
+  hotkey: "5Fq5v71D4LX8Db1xsmRSy6udQThcZ8sFDqxQFwnUZ1BuqY5A",
+  icon: "/images/icons/north-tensor.png"
+}, {
+  name: "Chat With Hal",
+  hotkey: "5CPzGD8sxyv8fKKXNvKem4qJRhCXABRmpUgC1wb1V4YAXLc3",
+  icon: "/images/icons/taostatsbanner-rounded.png"
+}, {
+  name: "Owl Ventures",
+  hotkey: "5CsvRJXuR955WojnGMdok1hbhffZyB4N5ocrv82f3p5A2zVp",
+  icon: "/images/icons/owl.jpg"
+}, {
+  name: "TAO FOX",
+  hotkey: "5G1AyYF9c5mChKPv6nFwuUcMfSDbCUzyJVFfKCm5qabhoHeP",
+  icon: "/images/icons/Taofox_final_Logo_Validator_480px.jpg"
+}, {
+  name: "chariτaos",
+  hotkey: "5GzoXHNJ4UzZYiQN2wpBcwMigiHiakiz5ZLMwhpunpwDNzFg",
+  icon: "/images/icons/charitaos.png"
+}, {
+  name: "Kooltek68",
+  hotkey: "5FX4nZPAzS85uSCJLyrYwsau51x46LMxPKf7Q54qYHDSVqhS",
+  icon: "/images/icons/9801.png"
+}, {
+  name: "TaoTensor",
+  hotkey: "5EZrPTXt2G9SvbDsERi5rS9zepour2yPmuhMhrNkgdiZvXEm",
+  icon: "/images/icons/TaoTensor-White-FF.png"
+}]

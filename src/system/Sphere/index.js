@@ -2,11 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import SimplexNoise from 'simplex-noise';
-import { watch, get_api_from_url, getNetuids } from '../../system/library';
+import { watch, get_api_from_url, getNetuids, getTransactions } from '../../system/library';
 import { LineSegments } from 'three';
 
 let running = [];
-let current_netuid;
+let current_netuid = 1;
 let api,
   renderer,
   scene,
@@ -17,19 +17,24 @@ let api,
   startPositions = [],
   starPositions = [],
   circles = [],
-  curves = [],
+  curves_meshes = [], miner_meshes = [], validator_meshes = [], filter_meshes = [], selected_mesh,
   noise = new SimplexNoise(),
   blobScale = 3,
   clock = new THREE.Clock();
 
+const totalNeurons = [];
+
   // const [validators, setValidators] = useState([]);
   // const [miners, setMiners] = useState([]);
-  // const [neuronsCount, setNeuronsCount] = useState(0);
+  // const [neuronsList[current_netuid].length, setNeuronsList[current_netuid].length] = useState(0);
   // const [neuronsList, setNeuronsList] = useState([]);
 
-let validators = [], miners = [], neuronsList = [], neuronsCount = 0;
+let validators = [], miners = [], neuronsList = {"1": [], "3": [], "11": []};
 
-let latestBlock = 0;
+let latestBlock = {};
+latestBlock[1] = 0;
+latestBlock[3] = 0;
+latestBlock[11] = 0;
 
 function randomPointSphere(radius) {
   let theta = 2 * Math.PI * Math.random();
@@ -40,19 +45,23 @@ function randomPointSphere(radius) {
   return new THREE.Vector3(dx, dy, dz);
 }
 
-for (let i = 0; i < 1000; i++) {
+for (let i = 0; i < 5000; i++) {
   let particles = randomPointSphere(148);
-  starPositions.push(particles);
+  startPositions.push(particles);
 }
 
 function getRandom(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-export default function Sphere({ netuid, setNetUid, onSelect }) {
+
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+
+export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, neurons, validatorAddr, searchString, searchType }) {
   // const [validators, setValidators] = useState([]);
   // const [miners, setMiners] = useState([]);
-  // const [neuronsCount, setNeuronsCount] = useState(0);
+  // const [neuronsList[current_netuid].length, setNeuronsList[current_netuid].length] = useState(0);
   // const [neuronsList, setNeuronsList] = useState([]);
 
   const containerRef = useRef(null);
@@ -78,28 +87,96 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
 
     validators = [];
     miners = [];
-    neuronsList = [];
-    neuronsCount = 0;
-    latestBlock = 0;
 
-    minersRef.current.geometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
-    minersRef.current.geometry.attributes.position.needsUpdate = true;
+    console.log("applying subtensor", netuid, neurons[netuid].length);
 
-    validatorsRef.current.geometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
-    validatorsRef.current.geometry.attributes.position.needsUpdate = true;
-
-    for (let i = curves.length - 1; i >= 0; i--) {
-      scene.remove(curves[i]);
-      curves.splice(i, 1)
+    for (let i = curves_meshes.length - 1; i >= 0; i--) {
+      scene.remove(curves_meshes[i]);
+      curves_meshes.splice(i, 1)
     }
-    curves = [];
+    curves_meshes = [];
 
-    onSelect({neuron: {}, all: [], index: 0});
-    console.log("updating netuid", netuid)
+    for (let i = validator_meshes.length - 1; i >= 0; i--) {
+      scene.remove(validator_meshes[i]);
+      validator_meshes.splice(i, 1)
+    }
+    validator_meshes = [];
+
+    for (let i = miner_meshes.length - 1; i >= 0; i--) {
+      scene.remove(miner_meshes[i]);
+      miner_meshes.splice(i, 1)
+    }
+    miner_meshes = [];
 
     current_netuid = netuid;
-    load(netuid);
-  }, [netuid, rendererRef.current])
+    restoreAll(netuid);
+
+    if(neuronsList[current_netuid].length == 0) return ;
+    console.log("onSelect", neuronsList[current_netuid].map((item) => item.neuron));
+    onSelect({neuron: neuronsList[current_netuid][neuronsList[current_netuid].length-1], all: neuronsList[current_netuid].map((item) => item.neuron), index: neuronsList[current_netuid].length -1, netuid: current_netuid});
+
+    if(!selected_mesh) return ;
+    const n = neuronsList[current_netuid][neuronsList[current_netuid].length-1].neuron.uid;
+    const pos = startPositions[n];
+    selected_mesh.position.set(pos.x, pos.y, pos.z);
+
+    // load(netuid);
+  }, [netuid])
+
+  useEffect(() => {
+    console.log(searchString, searchType,  neuronsList[current_netuid]);
+    let ans;
+    if(searchType == 1) { //UID search
+      ans = neuronsList[current_netuid].filter((item) => ("" + item.neuron.uid) == searchString);
+      console.log("found uid ", ans)
+    } else {
+      ans = neuronsList[current_netuid].filter((item) => String(item.neuron.hotkey).toLocaleLowerCase().includes(searchString.toLocaleLowerCase()));
+      if(searchString.trim().length == 0) {
+        ans.slice(0, ans.length);
+        ans = [];
+      }
+      console.log("found hotkey", ans)
+    }
+    for (let i = 0, l = ans.length; i < l; i++) {
+      if(filter_meshes.length > i) {
+        const p = startPositions[ans[i].neuron.uid];
+        filter_meshes[i].position.set(p.x, p.y, p.z);
+        console.log("position updated")
+      } else {
+        const p = startPositions[ans[i].neuron.uid];
+        let validatorSphere = new THREE.SphereBufferGeometry(4, 8, 8);
+        let materialSphereBg = new THREE.MeshBasicMaterial({
+          side: THREE.BackSide,
+          clearcoatRoughness: 0.5,
+          color: "#ffa000",
+          ior: 1.5,
+        });
+        const vMesh = new THREE.Mesh(validatorSphere, materialSphereBg);
+        vMesh.position.set(p.x, p.y, p.z);
+        scene.add(vMesh);
+        filter_meshes.push(vMesh);
+        console.log("created", p);
+      }
+    }
+    for(let i = filter_meshes.length -1; i >= ans.length; i-- ) {
+      scene.remove(filter_meshes[i]);
+      filter_meshes.slice(i, 1);
+      console.log("removed", i);
+    }
+    filter_meshes.length = ans.length;
+  }, [ searchString, searchType, neuronsList[current_netuid]])
+
+  useEffect(() => {
+    if(!selected_mesh) return ;
+    if(validatorAddr == "") return ;
+    for(let i = 0; i < neuronsList[current_netuid].length; i++) {
+      if(neuronsList[current_netuid][i].neuron.hotkey == validatorAddr) {
+        const pos = startPositions[neuronsList[current_netuid][i].neuron.uid];
+        selected_mesh.position.set(pos.x, pos.y, pos.z);
+      }
+    }
+    console.log("validator addressing", validatorAddr)
+  }, [validatorAddr])
 
   const init = () => {
     scene = new THREE.Scene();
@@ -162,7 +239,7 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
 
     /*    Sphere  Background   */
     textureSphereBg.anisotropy = 16;
-    let geometrySphereBg = new THREE.SphereBufferGeometry(150, 40, 40);
+    let geometrySphereBg = new THREE.SphereBufferGeometry(151, 40, 40);
     let materialSphereBg = new THREE.MeshBasicMaterial({
       side: THREE.BackSide,
       map: textureSphereBg,
@@ -180,12 +257,24 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
     scene.add(sphereBg);
     sphereBgRef.current = sphereBg;
 
+    let validatorSphere = new THREE.SphereBufferGeometry(3, 8, 8);
+    let selectedSphereBg = new THREE.MeshBasicMaterial({
+      side: THREE.BackSide,
+      clearcoatRoughness: 0.5,
+      color: "#ffffff",
+      ior: 1.5,
+    });
+    selected_mesh = new THREE.Mesh(validatorSphere, selectedSphereBg);
+    selected_mesh.position.set(0,0,0);
+    scene.add(selected_mesh);
+    
+
     /*    Moving Stars  */
     let starsGeometry = new THREE.BufferGeometry();
     let vertices = [];
     for (let i = 0; i < 50; i++) {
       let particleStar = randomPointSphere(150);
-      startPositions.push({ ...particleStar, velocity: THREE.MathUtils.randInt(30, 200) })
+      starPositions.push({ ...particleStar, velocity: THREE.MathUtils.randInt(30, 200) })
       vertices.push(particleStar);
     }
 
@@ -228,76 +317,133 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
     createStars(minersRef, texture2);
   }
 
-  const addValidator = (neuron = {}) => {
+  const restoreAll = (nid) => {
+    const vList = neuronsList[nid].map((item, index) => {return {...item, nid: index}}).filter((item) => {return item.type == 1}).sort((a, b) => a.nid - b.nid).map((item) => {return {neuron: item.neuron, id: item.nid}});
+    const mList = neuronsList[nid].map((item, index) => {return {...item, nid: index}}).filter((item) => item.type == 0).sort((a, b) => a.nid - b.nid).map((item) => {return {neuron: item.neuron, id: item.nid}});
 
-    validators.push({ id: neuronsCount, neuron });
-    neuronsList.push({ id: validators.length - 1, type: 1, neuron });
+    validators = vList;
+    miners = mList;
 
-    const vertices = []
+    console.log({neuronsList, nid, vList, mList});
+
+    drawValidators();
+    drawMiners();
+    drawCurves(false);
+  }
+
+  const drawValidators = () => {
     for (let i = 0, l = validators.length; i < l; i++) {
-      vertices.push(starPositions[validators[i].id]);
-    }
-    const verticesArray = vertices.flatMap(vector => vector.toArray());
-    validatorsRef.current.geometry.setAttribute('position', new THREE.Float32BufferAttribute(verticesArray, 3));
-
-    validatorsRef.current.geometry.attributes.position.needsUpdate = true;
-    neuronsCount = neuronsList.length;
-
-    if(neuronsList.length <= 1) return ;
-    
-    let material = new THREE.MeshBasicMaterial({ color: "#ff0000", transparent: true, opacity: 0.5 });
-    const curve = new ArcCurve(starPositions[neuronsCount-2], starPositions[neuronsCount-1], 30);  // 30 segments per curve
-    const geometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
-    const mesh = new THREE.Mesh(geometry, material);
-    curves.push(mesh);
-    scene.add(mesh);
-
-
-    let materialStartColor = new THREE.Color(0x00ff00); // red
-    let materialEndColor = new THREE.Color(0xff0000); // green
-
-    for(let i = 0; i < curves.length; i++) {
-      let materialColor = new THREE.Color().lerpColors(materialStartColor, materialEndColor, 1.0 * (neuronsCount - i) / neuronsCount);
-      curves[i].material = new THREE.MeshBasicMaterial({ color: materialColor, opacity: 0.8, transparent: true});
-      curves[i].material.needsUpdate = true;
+      if(validator_meshes.length > i) {
+        const p = startPositions[validators[i].neuron.uid];
+        validator_meshes[i].position.set(p.x, p.y, p.z);
+      } else {
+        const p = startPositions[validators[i].neuron.uid];
+        let validatorSphere = new THREE.SphereBufferGeometry(2, 8, 8);
+        let materialSphereBg = new THREE.MeshBasicMaterial({
+          side: THREE.BackSide,
+          clearcoatRoughness: 0.5,
+          color: "#ff3000",
+          ior: 1.5,
+        });
+        const vMesh = new THREE.Mesh(validatorSphere, materialSphereBg);
+        vMesh.position.set(p.x, p.y, p.z);
+        scene.add(vMesh);
+        validator_meshes.push(vMesh);
+      }
     }
   }
 
-  const addMiner = (neuron = {}) => {
-    miners.push({ id: neuronsCount, neuron });
-    neuronsList.push({ id: miners.length - 1, type: 0, neuron });
+  const addValidator = (neuron = {}) => {
 
-    const vertices = []
+    neuronsList[neuron.netuid].push({ id: validators.length, type: (neuron.validator_permit ? 1 : 0), neuron });
+    if(current_netuid != neuron.netuid) return ;
+
+    validators.push({ id: neuronsList[current_netuid].length - 1, neuron });
+    drawValidators();
+
+    if(neuronsList[current_netuid].length <= 1) return ;
+    drawCurves(true);
+  }
+
+  const drawMiners = () => {
     for (let i = 0, l = miners.length; i < l; i++) {
-      vertices.push(new THREE.Vector3(starPositions[miners[i].id].x, starPositions[miners[i].id].y, starPositions[miners[i].id].z));
+      if(miner_meshes.length > i) {
+        const p = startPositions[miners[i].neuron.uid];
+        miner_meshes[i].position.set(p.x, p.y, p.z);
+      } else {
+        const p = startPositions[miners[i].neuron.uid];
+        let minersphere = new THREE.SphereBufferGeometry(2, 8, 8);
+        let materialSphereBg = new THREE.MeshBasicMaterial({
+          side: THREE.BackSide,
+          clearcoatRoughness: 0.5,
+          color: "#ff00ff",
+          ior: 1.5,
+        });
+        const mMesh = new THREE.Mesh(minersphere, materialSphereBg);
+        mMesh.position.set(p.x, p.y, p.z);
+        scene.add(mMesh);
+        miner_meshes.push(mMesh);
+      }
     }
+    // if(neuronsList[current_netuid].length <= 1) return ;
+  }
 
-    const verticesArray = vertices.flatMap(vector => vector.toArray());
-    minersRef.current.geometry.setAttribute('position', new THREE.Float32BufferAttribute(verticesArray, 3));
-    minersRef.current.geometry.attributes.position.needsUpdate = true;
+  const addMiner = (neuron = {}) => {
+    neuronsList[neuron.netuid].push({ id: miners.length, type: 0, neuron });
+    if(current_netuid != neuron.netuid) return ;
+    
+    miners.push({ id: neuronsList[current_netuid].length, neuron });
 
-    neuronsCount = neuronsList.length;
+    drawMiners();
+    
+    if(neuronsList[current_netuid].length <= 1) return ;
+    drawCurves(true);
+  }
 
-    if(neuronsList.length <= 1) return ;
+  const drawCurves = (f) => {
+    if (f) {
+      let material = new THREE.MeshBasicMaterial({ color: "#ff0000", transparent: true, opacity: 0.5 });
+      const l = neuronsList[current_netuid].length;
+      const n1 = neuronsList[current_netuid][l-1].neuron.uid;
+      const n2 = neuronsList[current_netuid][l-2].neuron.uid;
+      const curve = new ArcCurve(startPositions[n1], startPositions[n2],50);  // 30 segments per curve
+      const geometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
+      const mesh = new THREE.Mesh(geometry, material);
+      curves_meshes.push(mesh)
+      scene.add(mesh);
+  
+      let materialStartColor = new THREE.Color(0x00ff00); // red
+      let materialEndColor = new THREE.Color(0xff0000); // green
+  
+      for(let i = 0; i < curves_meshes.length; i++) {
+        let materialColor = new THREE.Color().lerpColors(materialStartColor, materialEndColor, 1.0 * (neuronsList[current_netuid].length - i) / neuronsList[current_netuid].length);
+        curves_meshes[i].material = new THREE.MeshBasicMaterial({ color: materialColor, opacity: 0.8, transparent: true});
+        curves_meshes[i].material.needsUpdate = true;
+      }
+    } else {
+      
+      let materialStartColor = new THREE.Color(0x00ff00); // red
+      let materialEndColor = new THREE.Color(0xff0000); // green
 
-    let material = new THREE.MeshBasicMaterial({ color: "#ff0000", transparent: true, opacity: 0.5 });
+      for(let i = 2; i < neuronsList[current_netuid].length; i++) {
+        let materialColor = new THREE.Color().lerpColors(materialStartColor, materialEndColor, 1.0 * (neuronsList[current_netuid].length - i-2) / neuronsList[current_netuid].length);
 
-    const curve = new ArcCurve(starPositions[neuronsCount-2], starPositions[neuronsCount-1], 50);  // 30 segments per curve
-    const geometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
-    const mesh = new THREE.Mesh(geometry, material);
-    curves.push(mesh)
-    scene.add(mesh);
-
-    let materialStartColor = new THREE.Color(0x00ff00); // red
-    let materialEndColor = new THREE.Color(0xff0000); // green
-
-    for(let i = 0; i < curves.length; i++) {
-      let materialColor = new THREE.Color().lerpColors(materialStartColor, materialEndColor, 1.0 * (neuronsCount - i) / neuronsCount);
-      curves[i].material = new THREE.MeshBasicMaterial({ color: materialColor, opacity: 0.8, transparent: true});
-      curves[i].material.needsUpdate = true;
+        let material = new THREE.MeshBasicMaterial({ color: materialColor, transparent: true, opacity: 0.5 });
+        const n1 = neuronsList[current_netuid][i-1].neuron.uid;
+        const n2 = neuronsList[current_netuid][i-2].neuron.uid;
+        const curve = new ArcCurve(startPositions[n1], startPositions[n2],50);  // 30 segments per curve
+        const geometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
+        const mesh = new THREE.Mesh(geometry, material);
+        curves_meshes.push(mesh)
+        scene.add(mesh);
+      }
+      
+  
+      // for(let i = 0; i < curves_meshes.length; i++) {
+      //   curves_meshes[i].material = new THREE.MeshBasicMaterial({ color: materialColor, opacity: 0.8, transparent: true});
+      //   curves_meshes[i].material.needsUpdate = true;
+      // }
     }
-    // miners = mtmp;
-    // neuronsList = ntmp;
   }
 
   const animate = () => {
@@ -308,16 +454,16 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
       v.fromBufferAttribute(position, i);
       v.applyMatrix4(starsRef.current.matrixWorld);
 
-      v.x += (0 - v.x) / startPositions[i].velocity;
-      v.y += (0 - v.y) / startPositions[i].velocity;
-      v.z += (0 - v.z) / startPositions[i].velocity;
-      startPositions[i].velocity -= 0.3;
+      v.x += (0 - v.x) / starPositions[i].velocity;
+      v.y += (0 - v.y) / starPositions[i].velocity;
+      v.z += (0 - v.z) / starPositions[i].velocity;
+      starPositions[i].velocity -= 0.3;
 
       if (v.x <= 5 && v.x >= -5 && v.z <= 5 && v.z >= -5) {
-        v.x = startPositions[i].x;
-        v.y = startPositions[i].y;
-        v.z = startPositions[i].z;
-        startPositions[i].velocity = THREE.MathUtils.randInt(50, 300);
+        v.x = starPositions[i].x;
+        v.y = starPositions[i].y;
+        v.z = starPositions[i].z;
+        starPositions[i].velocity = THREE.MathUtils.randInt(50, 300);
       }
       starsRef.current.geometry.attributes.position.setXYZ(i, v.x, v.y, v.z)
     }
@@ -357,101 +503,85 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
     return vector;
   }
 
+
   function onMouseClick(event) {
-    let position = validatorsRef.current.geometry.attributes.position;
-    const v = new THREE.Vector3();
+    
     let min = 10;
     let selected = -1;
-    let ptype = 1;
-    for (let i = 0; i < position.count; i++) {
-      v.fromBufferAttribute(position, i);
-      v.applyMatrix4(validatorsRef.current.matrixWorld);
-
-      // validatorsRef.current.geometry.attributes.position.setXYZ(i, startPositions[i].x, startPositions[i].y, startPositions[i].z)
-      let position2D = get2DPosition(v, camera);
+    // let ptype = 1;
+    let pos;
+    for(let i = 0 ; i < neuronsList[current_netuid].length; i++) {
+      // console.log(neuronsList[current_netuid].neuron);
+      const position2D = get2DPosition(startPositions[neuronsList[current_netuid][i].neuron.uid], camera);
       const dist = Math.sqrt((position2D.x - event.clientX) * (position2D.x - event.clientX) + (position2D.y - event.clientY) * (position2D.y - event.clientY));
       if (dist < min) {
         min = dist;
         selected = i;
-      }
-    }
-    let m_position = minersRef.current.geometry.attributes.position;
-
-    for (let i = 0; i < m_position.count; i++) {
-      v.fromBufferAttribute(m_position, i);
-      v.applyMatrix4(minersRef.current.matrixWorld);
-
-      let position2D = get2DPosition(v, camera);
-      const dist = Math.sqrt((position2D.x - event.clientX) * (position2D.x - event.clientX) + (position2D.y - event.clientY) * (position2D.y - event.clientY));
-      if (dist < min) {
-        min = dist;
-        selected = i;
-        ptype = 0;
+        pos = startPositions[neuronsList[current_netuid][i].neuron.uid];
       }
     }
 
-    if (selected >= 0) {
-      let id = 0;
-      for(let i = 0 ;i < neuronsList.length; i++) {
-        if(neuronsList[i].type == ptype && neuronsList[i].id == selected) {
-          id = i;
-          break;
-        }
-      }
-      if(ptype === 1) {
-        onSelect({neuron: validators[selected].neuron, all: neuronsList.map((n) => n.neuron), index: id});
-      } else {
-        onSelect({neuron: miners[selected].neuron, all: neuronsList.map((n) => n.neuron), index: id});
-      }
+    if(selected >= 0) {
+      neuronsList[current_netuid].map((item) => item.neuron)
+      onSelect({neuron: neuronsList[current_netuid][selected].neuron, all: neuronsList[current_netuid].map((n) => n.neuron), index: selected, netuid: current_netuid});
+      selected_mesh.position.set(pos.x, pos.y, pos.z);
     }
   }
-
+  /*     Resize     */
+  const onWindowResize = () => {
+    clearTimeout(timeoutDebounceRef.current);
+    console.log("resize");
+    timeoutDebounceRef.current = setTimeout(() => {
+      cameraRef.current.aspect =
+        containerRef.current.clientWidth / containerRef.current.clientHeight;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(
+        containerRef.current.clientWidth,
+        containerRef.current.clientHeight
+      );
+    }, 80);
+  };
+  
   useEffect(() => {
     if (rendererRef.current) return;
 
     init();
     animate();
-    // load();
+    load();
 
     // Add event listeners
     // window.addEventListener('mousemove', onMouseMove, false);
     window.addEventListener('click', onMouseClick, false);
 
-    /*     Resize     */
-    const onWindowResize = () => {
-      clearTimeout(timeoutDebounceRef.current);
-      timeoutDebounceRef.current = setTimeout(() => {
-        cameraRef.current.aspect =
-          containerRef.current.clientWidth / containerRef.current.clientHeight;
-        cameraRef.current.updateProjectionMatrix();
-        rendererRef.current.setSize(
-          containerRef.current.clientWidth,
-          containerRef.current.clientHeight
-        );
-      }, 80);
-    };
+    
     window.addEventListener('resize', onWindowResize);
-    return () => {
-      window.removeEventListener('resize', onWindowResize);
-    };
+    // return () => {
+    //   window.removeEventListener('resize', onWindowResize);
+    // };
   }, []);
 
-  const onUpdate = (net, v) => {
-    console.log(net, current_netuid, v);
-    if(net != current_netuid) return ;
-    console.log("applying")
+  const onUpdate = (v) => {
+    let count = 0;
     for(let i = 0 ;i < v.length; i++) {
       const item = v[i];
-      if (item.last_update > latestBlock) {
-        latestBlock = item.last_update;
+      if (item.last_update > latestBlock[item.netuid]) {
+        latestBlock[item.netuid] = item.last_update;
         if (item.validator_permit) {
           addValidator(item)
+          count ++;
         } else {
           addMiner(item)
+          count ++;
         }
       }
     }
-    onSelect({neuron: neuronsList[neuronsCount - 1].neuron, all: neuronsList.map((n) => n.neuron), index: neuronsCount - 1});
+    console.log("addded", count);
+    if(v[0].netuid == current_netuid) {
+      const pos = startPositions[v[0].uid];
+      selected_mesh.position.set(pos.x, pos.y, pos.z);
+    }
+    console.log("onSelect", neuronsList[current_netuid].map((n) => n.neuron));
+    onSelect({neuron: neuronsList[current_netuid][neuronsList[current_netuid].length - 1].neuron, all: neuronsList[current_netuid].map((n) => n.neuron), index: neuronsList[current_netuid].length - 1, netuid: current_netuid});
   }
 
   const load = async (net) => {
@@ -465,10 +595,8 @@ export default function Sphere({ netuid, setNetUid, onSelect }) {
     } catch (err) {
       return;
     }
-    if(running.includes(net)) return ;
-
-    running.push(net);
-    watch(api, net, onUpdate);
+    // getTransactions(api);
+    watch(api, onUpdate, setTransactions);
   }
 
   return (<div id="canvas_container" ref={containerRef} style={{
