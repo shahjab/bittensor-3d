@@ -126,10 +126,12 @@ function App() {
       </button>
       {isOpenHelper &&
         <div className="rounded-[1rem] bg-white shadow p-[1rem] flex flex-col absolute bottom-[120px] right-[50px] min-w-[20rem]">
+          <p className="font-bold"> Neurons </p>
+
           <div className="flex">
             <div className="mr-[2rem]">
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#ff3000] rounded-full mr-[1rem]"></span> Validators
+                <span className="min-w-[20px] min-h-[20px] bg-[#ffff00] rounded-full mr-[1rem]"></span> Validators
               </div>
               <div className="flex items-center">
                 <span className="min-w-[20px] min-h-[20px] bg-[#ff00ff] rounded-full mr-[1rem]"></span> Miners
@@ -137,7 +139,7 @@ function App() {
             </div>
             <div>
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#ffa000] rounded-full mr-[1rem]"></span> Search results
+                <span className="min-w-[20px] min-h-[20px] bg-[#ff0000] rounded-full mr-[1rem]"></span> Search results
               </div>
               <div className="flex items-center">
                 <span className="min-w-[20px] min-h-[20px] bg-[white] rounded-full mr-[1rem] border-[1px] border-[gray]"></span> Selected
@@ -146,13 +148,26 @@ function App() {
           </div>
 
           <div className="min-h-[1px] bg-[gray] my-[0.5rem]"></div>
-          <p> Line by age </p>
-          <div className="bg-gradient-to-r from-[#ff0000] to-[#00ff00] rounded-full min-h-[0.5rem] shadow-sm my-[0.25rem]">
+          <p className="font-bold"> Lines </p>
+          <div className="flex">
+            <div className="mr-[2rem]">
+              <div className="flex items-center">
+                <span className="min-w-[20px] min-h-[20px] bg-[#ffff00] rounded-full mr-[1rem]"></span> Validators (Inner orbit)
+              </div>
+              <div className="flex items-center">
+                <span className="min-w-[20px] min-h-[20px] bg-[#500050] rounded-full mr-[1rem]"></span> Miners (Outer orbit)
+              </div>
+              <div className="flex items-center">
+                <span className="min-w-[20px] min-h-[20px] bg-[white] rounded-full mr-[1rem] border-[1px] border-[gray]"></span> Miner/Validator
+              </div>
+            </div>
+          </div>
+          {/* <div className="bg-gradient-to-r from-[#ff0000] to-[#00ff00] rounded-full min-h-[0.5rem] shadow-sm my-[0.25rem]">
           </div>
           <div className="flex items-center justify-between text-[10px]">
             <p> Oldest </p>
             <p> New </p>
-          </div>
+          </div> */}
         </div>
       }
       {isOpenDrawer == 0 &&
