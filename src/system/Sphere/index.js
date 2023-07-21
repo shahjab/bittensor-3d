@@ -251,9 +251,8 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       side: THREE.BackSide,
       // map: textureSphereBg,
       transparent: true,
-      color: "#303030",
+      color: "#000000",
       clearcoat: 0.5,
-      opacity: 0.8,
     });
 
     sphereBg = new THREE.Mesh(geometrySphereBg, materialSphereBg);
