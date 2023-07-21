@@ -131,15 +131,15 @@ function App() {
           <div className="flex">
             <div className="mr-[2rem]">
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#ffff00] rounded-full mr-[1rem]"></span> Validators
+                <span className="min-w-[20px] min-h-[20px] bg-[#87CEEB] rounded-full mr-[1rem]"></span> Validators
               </div>
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#ff00ff] rounded-full mr-[1rem]"></span> Miners
+                <span className="min-w-[20px] min-h-[20px] bg-[#FA8072] rounded-full mr-[1rem]"></span> Miners
               </div>
             </div>
             <div>
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#ff0000] rounded-full mr-[1rem]"></span> Search results
+                <span className="min-w-[20px] min-h-[20px] bg-[#32CD32] rounded-full mr-[1rem]"></span> Search results
               </div>
               <div className="flex items-center">
                 <span className="min-w-[20px] min-h-[20px] bg-[white] rounded-full mr-[1rem] border-[1px] border-[gray]"></span> Selected

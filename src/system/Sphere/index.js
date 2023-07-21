@@ -158,7 +158,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         let materialSphereBg = new THREE.MeshBasicMaterial({
           side: THREE.BackSide,
           clearcoatRoughness: 0.5,
-          color: "#ff0000",
+          color: "#32CD32",
           ior: 1.5,
         });
         const vMesh = new THREE.Mesh(validatorSphere, materialSphereBg);
@@ -241,7 +241,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       opacity: 0.5
     });
     nucleus = new THREE.Mesh(icosahedronGeometry, lambertMaterial);
-    // scene.add(nucleus);
+    scene.add(nucleus);
     nucleusRef.current = nucleus;
 
     /*    Sphere  Background   */
@@ -348,7 +348,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         let materialSphereBg = new THREE.MeshBasicMaterial({
           side: THREE.BackSide,
           clearcoatRoughness: 0.5,
-          color: "#ffff00",
+          color: "#87CEEB",
           ior: 1.5,
         });
         const vMesh = new THREE.Mesh(validatorSphere, materialSphereBg);
@@ -386,7 +386,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         let materialSphereBg = new THREE.MeshBasicMaterial({
           side: THREE.BackSide,
           clearcoatRoughness: 0.5,
-          color: "#ff00ff",
+          color: "#FA8072",
           ior: 1.5,
         });
         const mMesh = new THREE.Mesh(minersphere, materialSphereBg);
@@ -413,10 +413,10 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
   const drawCurves = (f) => {
     
     let colors = [];
-    colors.push(1, 1, 1, 0.8); // Color at n1 is red, alpha is 1
-    colors.push(1, 1, 1, 0.2); // Color at n2 is blue, alpha is 0
-    let m_material = new THREE.MeshBasicMaterial({ color: "#500050", transparent: true, opacity: 0.3});
-    let v_material = new THREE.MeshBasicMaterial({ color: "#ffff00", transparent: true, opacity: 0.3});
+    colors.push(0.827, 0.827, 0.827, 0.8); // Color at n1 is red, alpha is 1
+    colors.push(0.827, 0.827, 0.827, 0.2); // Color at n2 is blue, alpha is 0
+    let m_material = new THREE.MeshBasicMaterial({ color: "#FA8072", transparent: true, opacity: 0.6});
+    let v_material = new THREE.MeshBasicMaterial({ color: "#87CEEB", transparent: true, opacity: 0.6});
 
     if (f) {
       const l = neuronsList[current_netuid].length;
