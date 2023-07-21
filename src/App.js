@@ -14,7 +14,7 @@ import Sphere from './system/Sphere';
 import { validators } from './system/library';
 import { ClipLoader } from 'react-spinners'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAngleLeft, faAngleRight, faCircleInfo, faClose } from "@fortawesome/free-solid-svg-icons";
+import { faAngleLeft, faAngleRight, faCircleInfo, faClose, faSearch } from "@fortawesome/free-solid-svg-icons";
 // import { ArrowDropDown, ArrowDropUp } from '@mui/icons-material';
 
 const old_metas = {};
@@ -49,6 +49,7 @@ function App() {
   const [isOpenStake, openStakeDetails] = useState(false)
   const [isOpenDetails, openDetails] = useState(false);
   const [isOpenDrawer, openDrawer] = useState(false);
+  const [isOpenSearch, openSearch] = useState(false);
   const [isOpenHelper, openHelp] = useState(false);
   const [selectedNeuron, selectNeuron] = useState({});
   const [neuronInfo, setNeuronInfo] = useState({});
@@ -107,17 +108,7 @@ function App() {
       <div className="absolute z-50 top-[20px] left-[20px] mix-blend-darken h-[80px] w-[80px]">
         <img src="/images/logo.png" alt="" />
       </div>
-      <div className="absolute z-50 top-[20px] right-[500px] left-[200px] h-[80px] flex justify-center z-50">
-        <div className="rounded-full bg-[white] border-[1px] border-[#808080] shadow flex items-center h-[60px] text-black leading-[50px] px-[1rem]">
-          <input className="" type="text" value={searchString} onChange={(e) => setSearch(e.target.value)} className="outline-none lg:min-w-[300px]" placeholder="Search ..." />
-          <button className="border-[1px] rounded-full min-w-[20px] h-[20px] border-[#e0e0e0] text-[12px] leading-[12px] h-[24px] mr-[4px] ml-[0.5rem] text-[#a0a0a0]" onClick={() => { setSearch("") }}>
-            <FontAwesomeIcon icon={faClose} />
-          </button>
-          <button className="border-[1px] rounded border-[#e0e0e0] text-[12px] leading-[12px] h-[24px] px-[6px] mr-[4px]" onClick={() => { setSearchType(1) }} style={{ backgroundColor: searchType == 1 ? "#e0e0e0" : "white" }}> UID </button>
-          <button className="border-[1px] rounded border-[#e0e0e0] text-[12px] leading-[12px] h-[24px] px-[6px]" onClick={() => { setSearchType(2) }} style={{ backgroundColor: searchType == 2 ? "#e0e0e0" : "white" }}> Hotkey </button>
-
-        </div>
-      </div>
+      
       <div className="absolute z-50 top-[20px] left-[20px] mix-blend-darken h-[80px] w-[80px]">
         <img src="/images/logo.png" alt="" />
       </div>
@@ -139,7 +130,7 @@ function App() {
             </div>
             <div>
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#32CD32] rounded-full mr-[1rem]"></span> Search results
+                <span className="min-w-[20px] min-h-[20px] bg-[#ffff00] rounded-full mr-[1rem]"></span> Search results
               </div>
               <div className="flex items-center">
                 <span className="min-w-[20px] min-h-[20px] bg-[white] rounded-full mr-[1rem] border-[1px] border-[gray]"></span> Selected
@@ -152,10 +143,10 @@ function App() {
           <div className="flex">
             <div className="mr-[2rem]">
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#ffff00] rounded-full mr-[1rem]"></span> Validators (Inner orbit)
+                <span className="min-w-[20px] min-h-[20px] bg-[#87CEEB] rounded-full mr-[1rem]"></span> Validators (Inner orbit)
               </div>
               <div className="flex items-center">
-                <span className="min-w-[20px] min-h-[20px] bg-[#500050] rounded-full mr-[1rem]"></span> Miners (Outer orbit)
+                <span className="min-w-[20px] min-h-[20px] bg-[#FA8072] rounded-full mr-[1rem]"></span> Miners (Outer orbit)
               </div>
               <div className="flex items-center">
                 <span className="min-w-[20px] min-h-[20px] bg-[white] rounded-full mr-[1rem] border-[1px] border-[gray]"></span> Miner/Validator
@@ -187,6 +178,16 @@ function App() {
           {/* <FontAwesomeIcon icon={faAngleRight} width={24} height={24}/>   */}
         </button>
       }
+
+      {isOpenDrawer == 0 &&
+        <button className="fixed origin-center rotate-90 rounded-t-[1rem] top-[477px] -left-[42px] bg-white border-[1px] border-[gray] px-[1.25rem] pt-[0.5rem] pb-[0.25rem] flex items-center"
+          onClick={() => { openDrawer(3) }}
+        >
+          <p>Search</p>
+          <FontAwesomeIcon icon={faSearch} width={24} height={24}/>  
+        </button>
+      }
+
       <div className="absolute w-[360px] min-h-[calc(100vh-140px)] bg-white top-[120px] rounded-[1rem] rounded-l-[0px] flex flex-col p-[1rem] shadow transition-all duration-700" style={{ left: isOpenDrawer == 1 ? 0 : "-360px" }}>
         <h4 className="text-[1.25rem] font-bold"> Top Validators </h4>
         <div className="flex flex-col overflow-y-auto mt-[1.5rem] max-h-[calc(100vh-240px)]">
@@ -205,8 +206,8 @@ function App() {
                 }
               </div>
               <div className="flex flex-col px-[0.5rem] mr-[1rem]">
-                <p className="font-bold text-[14px] text-left"> {validator.name} <span className="px-[0.25rem] rounded-full bg-[green] text-white font-bold text-[12px]"> { getUidFromHotkey(validator.hotkey) } </span></p>
-                <p className="text-[11px] text-left"> hotkey: {validator.hotkey.substring(0, 5)}...{validator.hotkey.substring(validator.hotkey.length - 3)} </p>
+                <p className="font-bold text-[14px] text-left"> {validator.name}</p>
+                <p className="text-[11px] text-left"> hotkey: <span className="font-bold">{validator.hotkey.substring(0, 5)}...{validator.hotkey.substring(validator.hotkey.length - 3)} </span> <span className="px-[0.25rem] rounded-full bg-[green] text-white font-bold text-[12px]"> UID: { getUidFromHotkey(validator.hotkey) } </span></p>
               </div>
             </button>
           )}
@@ -228,11 +229,61 @@ function App() {
             </div>
           }
           {transactions.map((tx) =>
-            <button key={tx.hash} className="flex mb-[0.5rem] hover:bg-[lightgray]"
+            <button key={tx.hash} className="flex mb-[0.5rem] hover:bg-[#e0e0f0] mr-[0.5rem] pr-[0.5rem] rounded-[0.25rem] border-b-[1px] border-b-[gray] hover:shadow"
+              onClick={() => {
+                window.open(`https://explorer.finney.opentensor.ai/#/explorer/query/${tx.hash}`, "_blank")
+              }}
+            >
+              <div className="flex flex-col px-[0.5rem] text-left text-[11px] whitespace-nowrap overflow-hidden">
+                <p> block: <span className="font-bold">{tx.block}</span> - Extrinsic:  <span className="font-bold">{tx.hash}</span></p>
+                <p> Signed by <span className="font-bold">{String(tx.signer).substring(0,7)}...{String(tx.signer).substring(tx.signer.length - 3)} </span></p>
+              </div>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="absolute w-[360px] min-h-[calc(100vh-140px)] bg-white top-[120px] rounded-[1rem] rounded-l-[0px] flex flex-col p-[1rem] shadow transition-all duration-700" style={{ left: isOpenDrawer == 3 ? 0 : "-360px" }}>
+        <div className="rounded-[1rem] bg-[white] border-[1px] border-[#808080] shadow flex items-center h-[60px] text-black leading-[50px] px-[1rem]">
+          <input className="" type="text" value={searchString} onChange={(e) => setSearch(e.target.value)} className="outline-none" placeholder="Search ..." />
+          
+          <button className="border-[1px] rounded border-[#e0e0e0] text-[12px] leading-[12px] h-[24px] px-[6px] mr-[4px]" onClick={() => { setSearchType(1) }} style={{ backgroundColor: searchType == 1 ? "#e0e0e0" : "white" }}> UID </button>
+          <button className="border-[1px] rounded border-[#e0e0e0] text-[12px] leading-[12px] h-[24px] px-[6px]" onClick={() => { setSearchType(2) }} style={{ backgroundColor: searchType == 2 ? "#e0e0e0" : "white" }}> Hotkey </button>
+          <button className="border-[1px] rounded min-w-[20px] h-[20px] border-[#505050] text-[12px] leading-[12px] h-[24px] mr-[4px] ml-[0.5rem]" onClick={() => { openDrawer(0) }}>
+            <FontAwesomeIcon icon={faClose} />
+          </button>
+        </div>
+        <div className="flex flex-col overflow-y-auto overflow-x-hidden mt-[1.5rem] max-h-[calc(100vh-240px)]">
+          {/* <button className="absolute w-[30px] h-[30px] rounded top-[20px] right-[15px] bg-white border-[1px] border-[gray] border-b-[1px] border-[gray]"
+            onClick={() => { openDrawer(0) }}
+          >
+            <FontAwesomeIcon icon={faClose} width={24} height={24} />
+          </button> */}
+          {/* { neurons[netuid].filter((item) => { 
+            if(searchType == 1) {
+              return item.uid == searchString;
+            } else {
+              return String(item.hotkey).includes(searchString)
+            }
+          }).length == 0 && 
+            <div className="flex items-center">
+              <p>  </p>
+            </div>
+          } */}
+          {Array.from(new Map(neurons[netuid].map(_item => [_item.uid, _item])).values()).filter((item) => { 
+            if(searchType == 1) {
+              return item.uid == searchString;
+            } else {
+              return String(item.hotkey).includes(searchString)
+            }
+          }).map((neuron) =>
+            <button key={neuron.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" onClick={() => {
+              setSearch("" + neuron.uid); setSearchType(1);
+            }}
             >
               <div className="flex flex-col px-[0.5rem] mr-[1rem] text-left text-[11px] whitespace-nowrap">
-                <p> block: {tx.block} - Extrinsic: {tx.hash}</p>
-                <p> Signed by {tx.signer} </p>
+                <p> UID: {neuron.uid}</p>
+                <p> HOTKEY: {neuron.hotkey}</p>
               </div>
             </button>
           )}
@@ -327,7 +378,6 @@ function App() {
               </div>
             }
           </>
-
         }
 
       </div>

@@ -158,7 +158,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
         let materialSphereBg = new THREE.MeshBasicMaterial({
           side: THREE.BackSide,
           clearcoatRoughness: 0.5,
-          color: "#32CD32",
+          color: "#ffff00",
           ior: 1.5,
         });
         const vMesh = new THREE.Mesh(validatorSphere, materialSphereBg);
@@ -238,7 +238,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
     let lambertMaterial = new THREE.MeshPhongMaterial({
       map: texturenucleus,
       transparent: true,
-      opacity: 0.5
+      // opacity: 0.7
     });
     nucleus = new THREE.Mesh(icosahedronGeometry, lambertMaterial);
     scene.add(nucleus);
@@ -249,11 +249,11 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
     let geometrySphereBg = new THREE.SphereBufferGeometry(151, 40, 40);
     let materialSphereBg = new THREE.MeshBasicMaterial({
       side: THREE.BackSide,
-      map: textureSphereBg,
+      // map: textureSphereBg,
       transparent: true,
       color: "#303030",
       clearcoat: 0.5,
-      opacity: 0.5,
+      opacity: 0.8,
     });
 
     sphereBg = new THREE.Mesh(geometrySphereBg, materialSphereBg);
