@@ -308,10 +308,12 @@ export async function watch(api, onUpdate, setTransactions, setInitialNeurons) {
     const signedBlock = await api.rpc.chain.getBlock(header.hash);
     for (const extrinsic of signedBlock.block.extrinsics) {
       const { method: { args, method, section }, signer, isSigned } = extrinsic;
+      
+      console.log({method, args, section});
 
       const hash = api.createType('Extrinsic', extrinsic).hash.toHex();
       transactions.push({
-        hash, signer: signer.toString(), block: `${header.number}`,
+        hash, signer: signer.toString(), block: `${header.number}`, method
       })
     }
     
