@@ -64,6 +64,12 @@ function randomPointSphere(radius) {
 
 for (let i = 0; i < 5000; i++) {
   let particles = randomPointSphere(148);
+  if(i > 0) {
+    const dist = Math.sqrt((particles.x - startPositions.x) * (particles.x - startPositions.x) + (particles.y - startPositions.y) * (particles.y - startPositions.y) + (particles.z - startPositions.z) * (particles.z - startPositions.z));
+    while(dist > 400) {
+      particles = randomPointSphere(148);
+    }
+  }
   startPositions.push(particles);
 }
 
