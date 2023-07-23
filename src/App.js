@@ -115,6 +115,17 @@ function App() {
     return false;
   }
 
+  const filter = useCallback(() => {
+    const data = [];
+    for(let i=0; i < old_metas[netuid]?.length; i++) {
+        data[old_metas[netuid][i].uid] = old_metas[netuid][i];
+    }
+    for(let i=0; i < neurons[netuid].length ; i++) {
+        data[neurons[netuid][i].uid] = neurons[netuid][i];
+    }
+    return data;
+  }, [old_metas, neurons[netuid], netuid]);
+
   const onAddTransactions = (txs) => {
     const tmp = [...transactions, ...txs];
     setTransactions(tmp);
@@ -290,18 +301,17 @@ function App() {
               <p>  </p>
             </div>
           } */}
-          {Array.from(new Map(neurons[netuid].map(_item => [_item.uid, _item])).values()).filter((item) => { 
+          { filter().filter((item) => { 
             if(searchType == 1) {
-              return item.uid == searchString;
+              return ("" + item.uid) == searchString;
             } else {
               return String(String(item.hotkey).toLowerCase()).includes(searchString.toLowerCase())
             }
           }).map((neuron) => {
             const v = getValidator(neuron.hotkey);
-            console.log("________________", v)
             return v ?
             <button key={v.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" style={{ backgroundColor: neuronInfo?.hotkey == v.hotkey ? "lightblue" : "white" }}
-              onClick={() => { findValidator(neuron.hotkey) }}
+              onClick={() => { findValidator(v) }}
             >
               <div className="w-[80px] max-h-[80px] rounded flex justify-center items-center p-[0.25rem]" style={{backgroundColor: String(v.icon).length ? "black" : "transparent"}}>
                 {String(v.icon).length > 0 &&
@@ -323,7 +333,7 @@ function App() {
             //   </div>
             // </button> : 
             <button key={neuron.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray] rounded-[0.5rem] p-[0.5rem]" onClick={() => {
-              setSearch("" + neuron.uid); setSearchType(1);
+              findValidator(neuron);
             }}
             >
               <div className="flex flex-col px-[0.5rem] mr-[1rem] text-left text-[11px] whitespace-nowrap">
