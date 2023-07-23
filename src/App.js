@@ -61,18 +61,31 @@ function App() {
   const [validatorAddr, setValidatorAddr] = useState("");
 
   useEffect(() => {
+    if(index < 0)
+      return ;
     selectNeuron(neurons[netuid][index]);
     setNeuronInfo(getInfo(neurons[netuid][index]?.hotkey));
     setValidatorAddr(neurons[netuid][index]?.hotkey);
   }, [index])
 
   const findValidator = (v) => {
+    let f = false
     for (let i = 0; i < neurons[netuid].length; i++) {
       if (neurons[netuid][i].hotkey == v.hotkey) {
         setIndex(i);
         openDetails(true);
-        setNeuronInfo()
-        return;
+        f = true;
+        // return;
+      }
+    }
+    if(f) return ;
+    for (let i = 0; i < old_metas[netuid].length; i++) {
+      if (old_metas[netuid][i].hotkey == v.hotkey) {
+        setIndex(-1);
+        selectNeuron(old_metas[netuid][i]);
+        setNeuronInfo(getInfo(old_metas[netuid][i]?.hotkey));
+        setValidatorAddr(old_metas[netuid][i]?.hotkey);
+        openDetails(true);
       }
     }
   }
@@ -94,6 +107,13 @@ function App() {
     }
     return "...";
   }, [neurons[netuid], netuid])
+
+  const getValidator = (hotkey) => {
+    for(let i = 0 ;i < validators.length; i++)
+      if(String(validators[i].hotkey).toLowerCase() == String(hotkey).toLowerCase())
+        return validators[i];
+    return false;
+  }
 
   const onAddTransactions = (txs) => {
     const tmp = [...transactions, ...txs];
@@ -196,7 +216,7 @@ function App() {
           >
             <FontAwesomeIcon icon={faClose} width={24} height={24} />
           </button>
-          {validators.map((validator) =>
+          {validators.filter((item) => getUidFromHotkey(item.hotkey) != "...").map((validator) =>
             <button key={validator.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" style={{ backgroundColor: neuronInfo?.hotkey == validator.hotkey ? "lightblue" : "white" }}
               onClick={() => { findValidator(validator) }}
             >
@@ -274,18 +294,43 @@ function App() {
             if(searchType == 1) {
               return item.uid == searchString;
             } else {
-              return String(item.hotkey).includes(searchString)
+              return String(String(item.hotkey).toLowerCase()).includes(searchString.toLowerCase())
             }
-          }).map((neuron) =>
-            <button key={neuron.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" onClick={() => {
+          }).map((neuron) => {
+            const v = getValidator(neuron.hotkey);
+            console.log("________________", v)
+            return v ?
+            <button key={v.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" style={{ backgroundColor: neuronInfo?.hotkey == v.hotkey ? "lightblue" : "white" }}
+              onClick={() => { findValidator(neuron.hotkey) }}
+            >
+              <div className="w-[80px] max-h-[80px] rounded flex justify-center items-center p-[0.25rem]" style={{backgroundColor: String(v.icon).length ? "black" : "transparent"}}>
+                {String(v.icon).length > 0 &&
+                  <img alt={v.name} src={v.icon} />
+                }
+              </div>
+              <div className="flex flex-col px-[0.5rem] mr-[1rem]">
+                <p className="font-bold text-[14px] text-left"> {v.name}</p>
+                <p className="text-[11px] text-left"> hotkey: <span className="font-bold">{neuron.hotkey.substring(0, 5)}...{neuron.hotkey.substring(String(neuron.hotkey).length - 3)} </span> <span className="px-[0.25rem] rounded-full bg-[green] text-white font-bold text-[12px]"> UID: { getUidFromHotkey(v.hotkey) } </span></p>
+              </div>
+            </button> :
+            // <button key={neuron.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray]" onClick={() => {
+            //   setSearch("" + neuron.uid); setSearchType(1);
+            // }}
+            // >
+            //   <div className="flex flex-col px-[0.5rem] mr-[1rem] text-left text-[11px] whitespace-nowrap">
+            //     <p> UID: {neuron.uid}</p>
+            //     <p> HOTKEY: {neuron.hotkey}</p>
+            //   </div>
+            // </button> : 
+            <button key={neuron.hotkey} className="flex mb-[0.5rem] hover:bg-[lightgray] rounded-[0.5rem] p-[0.5rem]" onClick={() => {
               setSearch("" + neuron.uid); setSearchType(1);
             }}
             >
               <div className="flex flex-col px-[0.5rem] mr-[1rem] text-left text-[11px] whitespace-nowrap">
-                <p> UID: {neuron.uid}</p>
-                <p> HOTKEY: {neuron.hotkey}</p>
+                <p className="text-[11px] text-left"> hotkey: <span className="font-bold">{neuron.hotkey.substring(0, 5)}...{neuron.hotkey.substring(String(neuron.hotkey).length - 3)} </span> <span className=" ml-[0.5rem] px-[0.25rem] rounded-full bg-[green] text-white font-bold text-[12px]"> UID: {  neuron.uid } </span></p>
               </div>
             </button>
+          }
           )}
         </div>
       </div>
@@ -308,7 +353,7 @@ function App() {
           </FormControl>
           <div style={{ flexGrow: 1 }}></div>
           {neurons[netuid]?.length < 1 &&
-            <ClipLoader />
+            <ClipLoader/>
           }
         </div>
         {selectedNeuron?.uid > 0 &&
