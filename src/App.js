@@ -14,7 +14,7 @@ import Sphere from './system/Sphere';
 import { validators } from './system/library';
 import { ClipLoader } from 'react-spinners'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAngleLeft, faAngleRight, faCircleInfo, faClose, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faAngleLeft, faAngleRight, faCircleInfo, faClose, faCopy, faSearch } from "@fortawesome/free-solid-svg-icons";
 // import { ArrowDropDown, ArrowDropUp } from '@mui/icons-material';
 
 const old_metas = {};
@@ -266,8 +266,20 @@ function App() {
               // }}
             >
               <div className="flex flex-col px-[0.5rem] text-left text-[11px] whitespace-nowrap overflow-hidden">
-                <p> Method: <span className="font-bold">{tx.method}</span> - Signed by <span className="font-bold">{String(tx.signer).substring(0,7)}...{String(tx.signer).substring(tx.signer.length - 3)}</span></p>
-                <p> Extrinsic: <span className="font-bold">{String(tx.hash).substring(0,9)}...{String(tx.hash).substring(tx.hash.length - 4)}</span> - block: <span className="font-bold">{tx.block}</span></p>
+                <p> Method: <span className="font-bold mr-[1rem]">{tx.method}</span> Block: <span className="font-bold">{tx.block}</span>
+                </p>
+                <p> Signed by <span className="font-bold">{String(tx.signer).substring(0,7)}...{String(tx.signer).substring(tx.signer.length - 3)}</span>
+                  <FontAwesomeIcon icon={faCopy} width={16} height={16} className="ml-[0.5rem] hover:text-[gray]"
+                    onClick={async () => { 
+                      await navigator.clipboard.writeText(tx.signer)
+                    }}
+                  />
+                </p>
+                <p> Extrinsic: <span className="font-bold">{String(tx.hash).substring(0,9)}...{String(tx.hash).substring(tx.hash.length - 4)}</span> <FontAwesomeIcon icon={faCopy} width={16} height={16} className="mx-[0.25rem] hover:text-[gray]"
+                    onClick={async () => { 
+                      await navigator.clipboard.writeText(tx.hash)
+                    }}
+                  /></p>
               </div>
             </button>
           )}

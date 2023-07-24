@@ -131,6 +131,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
     miner_meshes = [];
 
     current_netuid = netuid;
+    counts.splice(0, counts.length);
     restoreAll(netuid);
 
     if (neuronsList[current_netuid].length == 0) return;
