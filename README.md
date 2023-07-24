@@ -17,9 +17,9 @@ To get started with Bittensor 3D Visualization, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/shahjab/bittensor-3d.git`
 2. Install dependencies: `cd bittensor-3d && npm install`
-3. Configure Polkadot.js connection: Update the Polkadot.js connection details in the `.env` file.
-4. Start the application: `npm start`
-5. Open your browser and visit `http://localhost:3000` to access the Bittensor 3D Visualization.
+3. Start the application: `npm start`
+4. Open your browser and visit `http://localhost:3000` to access the Bittensor 3D Visualization.
+5. Build the application: 'npm run build'
 
 ## Contributing
 
