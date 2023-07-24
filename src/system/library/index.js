@@ -297,7 +297,7 @@ export async function watch(api, onUpdate, setTransactions, setInitialNeurons) {
     setInitialNeurons(old_meta)
 
     let sorted_meta = old_meta.sort((a, b) => b.last_update - a.last_update);
-    neurons[netuids[i]] = sorted_meta.slice(0, 150);
+    neurons[netuids[i]] = sorted_meta.slice(0, 100);
     startBlock[netuids[i]] = neurons[netuids[i]][0].last_update;
     neurons[netuids[i]] = neurons[netuids[i]].reverse();
     onUpdate(neurons[netuids[i]])

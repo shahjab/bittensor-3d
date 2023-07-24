@@ -22,7 +22,8 @@ let api,
   clock = new THREE.Clock();
 
 const totalNeurons = [];
-
+const counts = [];
+const _curve = [];
 // const [validators, setValidators] = useState([]);
 // const [miners, setMiners] = useState([]);
 // const [neuronsList[current_netuid].length, setNeuronsList[current_netuid].length] = useState(0);
@@ -344,12 +345,18 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       if (distance > 100) {
         startPositions[validators[i].neuron.uid].normalize().multiplyScalar(80);
       }
+      if(!counts[validators[i].neuron.uid]) {
+        counts[validators[i].neuron.uid] = 1;
+      } else {
+        counts[validators[i].neuron.uid] ++;
+      }
       if (validator_meshes.length > i) {
         const p = startPositions[validators[i].neuron.uid];
         validator_meshes[i].position.set(p.x, p.y, p.z);
       } else {
         const p = startPositions[validators[i].neuron.uid];
-        let validatorSphere = new THREE.SphereBufferGeometry(2, 8, 8);
+        
+        let validatorSphere = new THREE.SphereBufferGeometry(2.0, 8, 8);
         let materialSphereBg = new THREE.MeshBasicMaterial({
           side: THREE.BackSide,
           clearcoatRoughness: 0.5,
@@ -382,12 +389,17 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       if (distance < 100) {
         startPositions[miners[i].neuron.uid].normalize().multiplyScalar(150);
       }
+      if(!counts[miners[i].neuron.uid]) {
+        counts[miners[i].neuron.uid] = 1;
+      } else {
+        counts[miners[i].neuron.uid] ++;
+      }
       if (miner_meshes.length > i) {
         const p = startPositions[miners[i].neuron.uid];
         miner_meshes[i].position.set(p.x, p.y, p.z);
       } else {
         const p = startPositions[miners[i].neuron.uid];
-        let minersphere = new THREE.SphereBufferGeometry(2, 8, 8);
+        let minersphere = new THREE.SphereBufferGeometry(2.0, 8, 8);
         let materialSphereBg = new THREE.MeshBasicMaterial({
           side: THREE.BackSide,
           clearcoatRoughness: 0.5,
@@ -429,11 +441,15 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       const n2 = neuronsList[current_netuid][l - 2].neuron.uid;
 
       if (neuronsList[current_netuid][l - 2].neuron.validator_permit == neuronsList[current_netuid][l - 1].neuron.validator_permit) {
+        if(_curve[n1]) {
+          scene.remove(_curve[n1])
+        }
         const isValidator = neuronsList[current_netuid][l - 2].neuron.validator_permit;
 
         const curve = new ArcCurve(startPositions[n1], startPositions[n2], 50, isValidator ? 80 : 148);  // 30 segments per curve
         const geometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
         const mesh = new THREE.Mesh(geometry, isValidator ? v_material : m_material);
+        _curve[n1] = mesh;
         curves_meshes.push(mesh)
         scene.add(mesh);
       } else {
@@ -457,11 +473,14 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
       let materialStartColor = new THREE.Color(0x00ff00); // red
       let materialEndColor = new THREE.Color(0xff0000); // green
 
-      for (let i = 2; i < neuronsList[current_netuid].length; i++) {
+      for (let i = neuronsList[current_netuid].length; i >= 2; i--) {
         let material = new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.5 });
         const n1 = neuronsList[current_netuid][i - 1].neuron.uid;
         const n2 = neuronsList[current_netuid][i - 2].neuron.uid;
 
+        if(_curve[n1]) {
+          continue;
+        }
 
         if (neuronsList[current_netuid][i - 2].neuron.validator_permit == neuronsList[current_netuid][i - 1].neuron.validator_permit) {
         const isValidator = neuronsList[current_netuid][i - 2].neuron.validator_permit;
@@ -470,6 +489,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
           const geometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
 
           const mesh = new THREE.Mesh(geometry, isValidator ? v_material : m_material);
+          _curve[n1] = mesh;
           curves_meshes.push(mesh)
           scene.add(mesh);
         } else {
@@ -483,6 +503,7 @@ export default function Sphere({ netuid, setNetUid, onSelect, setTransactions, n
           geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
 
           const line = new THREE.Line(geometry, _material);
+          _curve[n1] = line;
           curves_meshes.push(line);
           scene.add(line);
         }

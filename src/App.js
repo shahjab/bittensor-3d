@@ -261,9 +261,9 @@ function App() {
           }
           {transactions.map((tx) =>
             <button key={tx.hash} className="flex mb-[0.5rem] hover:bg-[#e0e0f0] mr-[0.5rem] p-[0.5rem] rounded-[0.25rem] border-b-[1px] border-b-[gray] hover:shadow"
-              onClick={() => {
-                window.open(`https://explorer.finney.opentensor.ai/#/explorer/query/${tx.hash}`, "_blank")
-              }}
+              // onClick={() => {
+              //   window.open(`https://explorer.finney.opentensor.ai/#/explorer/query/${tx.hash}`, "_blank")
+              // }}
             >
               <div className="flex flex-col px-[0.5rem] text-left text-[11px] whitespace-nowrap overflow-hidden">
                 <p> Method: <span className="font-bold">{tx.method}</span> - Signed by <span className="font-bold">{String(tx.signer).substring(0,7)}...{String(tx.signer).substring(tx.signer.length - 3)}</span></p>
